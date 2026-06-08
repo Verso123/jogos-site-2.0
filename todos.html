@@ -262,7 +262,7 @@
     getAuth, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
-    getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy
+    getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -304,13 +304,16 @@
   // ── CARREGAR ───────────────────────────────────────────────────
   async function carregarJogos() {
     try {
+      // CORREÇÃO: removido orderBy do Firestore para evitar erro de índice composto.
+      // A ordenação por "atualizadoEm" é feita no cliente logo abaixo.
       const q = query(
         collection(db, "jogos"),
-        where("uid", "==", usuarioAtual.uid),
-        orderBy("atualizadoEm", "desc")
+        where("uid", "==", usuarioAtual.uid)
       );
       const snap = await getDocs(q);
       todosJogos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Ordena do mais recente para o mais antigo no cliente
+      todosJogos.sort((a, b) => (b.atualizadoEm || 0) - (a.atualizadoEm || 0));
       renderizar(todosJogos);
       atualizarStats(todosJogos);
     } catch (e) {
