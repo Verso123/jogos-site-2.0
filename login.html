@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Meus Jogos</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .logo h1 { font-size: 32px; }
+    .logo h1 span { color: #7c6af7; }
+    .logo p { color: #666; font-size: 14px; margin-top: 6px; }
+
+    .card {
+      background: #13132a;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .tabs {
+      display: flex;
+      margin-bottom: 28px;
+      background: #0e0e22;
+      border-radius: 8px;
+      padding: 4px;
+    }
+    .tab {
+      flex: 1;
+      padding: 9px;
+      text-align: center;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: #7c6af7;
+      color: white;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 6px;
+      margin-top: 16px;
+    }
+    input {
+      width: 100%;
+      background: #0e0e22;
+      border: 1px solid #2a2a4a;
+      color: #e0e0e0;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border 0.2s;
+    }
+    input:focus { outline: none; border-color: #7c6af7; }
+
+    .btn {
+      width: 100%;
+      margin-top: 22px;
+      padding: 13px;
+      background: #7c6af7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #msg {
+      margin-top: 14px;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+      text-align: center;
+    }
+    #msg.ok  { background: #0d2b1d; color: #4ade80; border: 1px solid #1a4a30; }
+    #msg.err { background: #2b0d0d; color: #f87171; border: 1px solid #4a1a1a; }
+
+    .forgot {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 12px;
+      color: #555;
+    }
+    .forgot a { color: #7c6af7; cursor: pointer; text-decoration: none; }
+    .forgot a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <h1>🎮 Meus <span>Jogos</span></h1>
+    <p>Sua lista pessoal de jogos zerados</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" id="tab-login" onclick="trocarAba('login')">Entrar</div>
+      <div class="tab" id="tab-cadastro" onclick="trocarAba('cadastro')">Criar conta</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="form-login">
+      <label>E-mail</label>
+      <input type="email" id="l-email" placeholder="seu@email.com">
+      <label>Senha</label>
+      <input type="password" id="l-senha" placeholder="••••••••">
+      <button class="btn" onclick="fazerLogin()">Entrar</button>
+      <div class="forgot"><a onclick="recuperarSenha()">Esqueci minha senha</a></div>
+    </div>
+
+    <!-- CADASTRO -->
+    <div id="form-cadastro" style="display:none">
+      <label>Nome</label>
+      <input type="text" id="c-nome" placeholder="Seu nome">
+      <label>E-mail</label>
+      <input type="email" id="c-email" placeholder="seu@email.com">
+      <label>Senha</label>
+      <input type="password" id="c-senha" placeholder="mínimo 6 caracteres">
+      <label>Confirmar senha</label>
+      <input type="password" id="c-senha2" placeholder="repita a senha">
+      <button class="btn" onclick="fazerCadastro()">Criar conta</button>
+    </div>
+
+    <div id="msg"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    updateProfile
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAaIxroCAMOvDxg5aLUr2P8jweygemm1uM",
+    authDomain: "lista-de-jogos-f1874.firebaseapp.com",
+    projectId: "lista-de-jogos-f1874",
+    storageBucket: "lista-de-jogos-f1874.firebasestorage.app",
+    messagingSenderId: "692334284655",
+    appId: "1:692334284655:web:a55db647b5f8b39d00a29a"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  function msg(texto, tipo) {
+    const el = document.getElementById("msg");
+    el.textContent = texto;
+    el.className = tipo;
+    el.style.display = "block";
+  }
+
+  window.trocarAba = function(aba) {
+    document.getElementById("form-login").style.display = aba === "login" ? "block" : "none";
+    document.getElementById("form-cadastro").style.display = aba === "cadastro" ? "block" : "none";
+    document.getElementById("tab-login").className = "tab" + (aba === "login" ? " active" : "");
+    document.getElementById("tab-cadastro").className = "tab" + (aba === "cadastro" ? " active" : "");
+    document.getElementById("msg").style.display = "none";
+  };
+
+  window.fazerLogin = async function() {
+    const email = document.getElementById("l-email").value.trim();
+    const senha = document.getElementById("l-senha").value;
+    if (!email || !senha) { msg("Preencha e-mail e senha.", "err"); return; }
+    try {
+      await signInWithEmailAndPassword(auth, email, senha);
+      window.location.href = "todos.html";
+    } catch (e) {
+      const erros = {
+        "auth/user-not-found": "Usuário não encontrado.",
+        "auth/wrong-password": "Senha incorreta.",
+        "auth/invalid-email": "E-mail inválido.",
+        "auth/invalid-credential": "E-mail ou senha incorretos."
+      };
+      msg(erros[e.code] || "Erro ao entrar: " + e.message, "err");
+    }
+  };
+
+  window.fazerCadastro = async function() {
+    const nome = document.getElementById("c-nome").value.trim();
+    const email = document.getElementById("c-email").value.trim();
+    const senha = document.getElementById("c-senha").value;
+    const senha2 = document.getElementById("c-senha2").value;
+    if (!nome || !email || !senha) { msg("Preencha todos os campos.", "err"); return; }
+    if (senha !== senha2) { msg("As senhas não coincidem.", "err"); return; }
+    if (senha.length < 6) { msg("Senha deve ter pelo menos 6 caracteres.", "err"); return; }
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, senha);
+      await updateProfile(cred.user, { displayName: nome });
+      msg("✅ Conta criada! Entrando...", "ok");
+      setTimeout(() => window.location.href = "todos.html", 1200);
+    } catch (e) {
+      const erros = {
+        "auth/email-already-in-use": "Este e-mail já está cadastrado.",
+        "auth/invalid-email": "E-mail inválido.",
+        "auth/weak-password": "Senha muito fraca."
+      };
+      msg(erros[e.code] || "Erro ao cadastrar: " + e.message, "err");
+    }
+  };
+
+  window.recuperarSenha = async function() {
+    const email = document.getElementById("l-email").value.trim();
+    if (!email) { msg("Digite seu e-mail acima primeiro.", "err"); return; }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      msg("✅ E-mail de recuperação enviado!", "ok");
+    } catch (e) {
+      msg("Erro ao enviar e-mail.", "err");
+    }
+  };
+</script>
+</body>
+</html>
