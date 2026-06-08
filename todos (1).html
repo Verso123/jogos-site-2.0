@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todos os Jogos Zerados</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #121212 0%, #1a1230 100%);
+      padding: 28px 25px;
+      text-align: center;
+      position: relative;
+      border-bottom: 1px solid #222;
+    }
+    header h1 { font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+    header h1 span { color: #7c6af7; }
+    .admin-link {
+      position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+      background: #1e1e3a; color: #7c6af7; text-decoration: none;
+      padding: 7px 14px; border-radius: 6px; border: 1px solid #3a3a6a;
+      font-size: 13px; transition: background 0.2s;
+    }
+    .admin-link:hover { background: #2a2a4a; }
+
+    /* ── STATS CARDS ── */
+    .stats-wrap {
+      display: flex; gap: 12px; margin: 20px 20px 0;
+      flex-wrap: wrap;
+    }
+    .stat {
+      background: #151520; border: 1px solid #2a2a3a;
+      border-radius: 10px; padding: 12px 18px;
+      flex: 1; min-width: 100px; text-align: center;
+    }
+    .stat .num { font-size: 22px; font-weight: 700; color: #7c6af7; }
+    .stat .lbl { font-size: 11px; color: #777; margin-top: 3px; }
+
+    /* ── AÇÕES ── */
+    .acoes {
+      margin: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .acoes a,
+    .acoes button,
+    .acoes select,
+    .acoes input[type=text] {
+      background: #1b1b1b;
+      color: white;
+      border: 1px solid #444;
+      padding: 0 14px;
+      height: 36px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    .acoes a:hover, .acoes button:hover, .acoes select:hover { background: #2a2a2a; }
+    .acoes select { appearance: none; }
+    .acoes input[type=text] { cursor: text; min-width: 160px; }
+    .acoes input[type=text]:focus { outline: none; border-color: #7c6af7; }
+
+    /* ── TABELA ── */
+    .table-wrap { overflow-x: auto; margin: 0 10px 30px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+    }
+
+    th {
+      background: #111;
+      padding: 12px 10px;
+      border-bottom: 1px solid #333;
+      font-size: 13px;
+      color: #aaa;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 11px 10px;
+      border-bottom: 1px solid #1e1e1e;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    tr.jogo-row { cursor: pointer; transition: background 0.15s; }
+    tr.jogo-row:hover { background: #1a1a1a; }
+
+    /* destaque nota 10 */
+    tr.jogo-row.nota10 {
+      border-left: 3px solid #f59e0b;
+    }
+
+    td img {
+      width: 54px; height: 54px; object-fit: cover;
+      border-radius: 6px; display: block; margin: 0 auto;
+    }
+
+    /* badges plataforma */
+    .badge {
+      display: inline-block; padding: 3px 9px;
+      border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .badge-PC   { background: #1a3a5c; color: #60b4ff; border: 1px solid #2a5a8c; }
+    .badge-PS   { background: #2a1a5c; color: #a78bfa; border: 1px solid #4a3a8c; }
+    .badge-Xbox { background: #1a3a1a; color: #4ade80; border: 1px solid #2a5a2a; }
+
+    /* estrelas de nota */
+    .nota-wrap { display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .estrelas { color: #f59e0b; font-size: 11px; letter-spacing: 1px; }
+    .nota-num  { font-weight: 700; font-size: 14px; }
+
+    /* comentário */
+    tr.comentario td {
+      background: #111;
+      text-align: left;
+      padding: 18px 24px;
+      font-style: italic;
+      color: #ccc;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    /* loading / vazio */
+    .estado {
+      text-align: center; padding: 60px 20px; color: #555;
+    }
+    .spinner {
+      width: 36px; height: 36px; border: 3px solid #2a2a2a;
+      border-top-color: #7c6af7; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎮 Jogos <span>Zerados</span></h1>
+  <a href="admin.html" class="admin-link">⚙️ Admin</a>
+</header>
+
+<!-- STATS -->
+<div class="stats-wrap">
+  <div class="stat"><div class="num" id="st-total">—</div><div class="lbl">Zerados</div></div>
+  <div class="stat"><div class="num" id="st-nota">—</div><div class="lbl">Nota Média</div></div>
+  <div class="stat"><div class="num" id="st-horas">—</div><div class="lbl">Horas Totais</div></div>
+  <div class="stat"><div class="num" id="st-platinas">—</div><div class="lbl">Platinas</div></div>
+  <div class="stat"><div class="num" id="st-nota10">—</div><div class="lbl">Nota 10</div></div>
+</div>
+
+<!-- AÇÕES -->
+<div class="acoes">
+  <a href="index.html">⬅ Voltar</a>
+  <button onclick="ordenarAlfabetico()">🔤 A–Z</button>
+  <button onclick="ordenarPorNota()">⭐ Nota</button>
+  <button onclick="ordenarPlatinas()">🏆 Platina</button>
+
+  <select onchange="ordenarHoras(this.value); this.value=''">
+    <option value="">⏱ Horas</option>
+    <option value="maior">↓ Maior</option>
+    <option value="menor">↑ Menor</option>
+  </select>
+
+  <select onchange="ordenarData(this.value); this.value=''">
+    <option value="">📅 Data</option>
+    <option value="recente">↓ Recente</option>
+    <option value="antigo">↑ Antigo</option>
+  </select>
+
+  <select id="sel-plataforma" onchange="filtrarPlataforma(this.value)">
+    <option value="todas">🎮 Todas</option>
+    <option value="PC">PC</option>
+    <option value="PS3">PS3</option>
+    <option value="PS4">PS4</option>
+    <option value="PS5">PS5</option>
+    <option value="Xbox">Xbox</option>
+  </select>
+
+  <input type="text" id="busca" placeholder="🔍 Buscar jogo..." oninput="filtrarBusca()">
+</div>
+
+<!-- TABELA -->
+<div class="table-wrap">
+  <table id="tabelaJogos">
+    <thead>
+      <tr>
+        <th>Capa</th>
+        <th>Jogo</th>
+        <th>Gênero</th>
+        <th>Plataforma</th>
+        <th>Horas</th>
+        <th>Nota</th>
+        <th>Data</th>
+        <th>Platina</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="8"><div class="estado"><div class="spinner"></div>Carregando jogos...</div></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs, orderBy, query
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAaIxroCAMOvDxg5aLUr2P8jweygemm1uM",
+    authDomain: "lista-de-jogos-f1874.firebaseapp.com",
+    projectId: "lista-de-jogos-f1874",
+    storageBucket: "lista-de-jogos-f1874.firebasestorage.app",
+    messagingSenderId: "692334284655",
+    appId: "1:692334284655:web:a55db647b5f8b39d00a29a"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let todosJogos = [];
+  let plataformaAtiva = "todas";
+
+  // ── CARREGAR ───────────────────────────────────────────────────
+  async function carregarJogos() {
+    try {
+      const q = query(collection(db, "jogos"), orderBy("atualizadoEm", "desc"));
+      const snap = await getDocs(q);
+      todosJogos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderizar(todosJogos);
+      atualizarStats(todosJogos);
+    } catch (e) {
+      document.getElementById("tbody").innerHTML =
+        `<tr><td colspan="8"><div class="estado" style="color:#f87171">Erro ao carregar: ${e.message}</div></td></tr>`;
+    }
+  }
+
+  // ── RENDERIZAR ─────────────────────────────────────────────────
+  function renderizar(jogos) {
+    const tbody = document.getElementById("tbody");
+    if (!jogos.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="estado">Nenhum jogo encontrado.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = jogos.map(j => {
+      const nota = j.nota !== null && j.nota !== undefined ? j.nota : null;
+      const notaDisplay = nota !== null ? nota : "—";
+      const estrelas = nota !== null ? renderEstrelas(nota) : "";
+      const classe = nota >= 10 ? "jogo-row nota10" : "jogo-row";
+      const badge = badgePlataforma(j.plataforma || "");
+      const imgSrc = j.imagem || "https://via.placeholder.com/54x54/1a1a2e/7c6af7?text=?";
+
+      return `
+        <tr class="${classe}" onclick="toggleComentario(this, '${j.id}')">
+          <td><img src="${imgSrc}" onerror="this.src='https://via.placeholder.com/54x54/1a1a2e/7c6af7?text=?'" loading="lazy"></td>
+          <td style="text-align:left; font-weight:600">${j.nome || ''}</td>
+          <td>${j.genero || ''}</td>
+          <td>${badge}</td>
+          <td>${j.horas || '—'}</td>
+          <td><div class="nota-wrap"><span class="estrelas">${estrelas}</span><span class="nota-num">${notaDisplay}</span></div></td>
+          <td>${j.data || '—'}</td>
+          <td>${j.platina || ''}</td>
+        </tr>`;
+    }).join('');
+
+    // guarda reviews no DOM para acesso rápido
+    window._reviews = {};
+    jogos.forEach(j => { window._reviews[j.id] = j.review || "Sem comentário cadastrado."; });
+  }
+
+  function renderEstrelas(nota) {
+    const cheia = Math.floor(nota / 2);
+    const meia  = (nota % 2) >= 1 ? 1 : 0;
+    const vazia = 5 - cheia - meia;
+    return "★".repeat(cheia) + (meia ? "½" : "") + "☆".repeat(vazia);
+  }
+
+  function badgePlataforma(plat) {
+    if (plat.includes("PC")) return `<span class="badge badge-PC">${plat}</span>`;
+    if (plat.includes("PS"))  return `<span class="badge badge-PS">${plat}</span>`;
+    if (plat.includes("Xbox")) return `<span class="badge badge-Xbox">${plat}</span>`;
+    return `<span class="badge" style="background:#2a2a2a;color:#aaa">${plat}</span>`;
+  }
+
+  // ── STATS ──────────────────────────────────────────────────────
+  function atualizarStats(jogos) {
+    document.getElementById("st-total").textContent = jogos.length;
+    const comNota = jogos.filter(j => j.nota !== null && j.nota !== undefined);
+    const media = comNota.length
+      ? (comNota.reduce((s, j) => s + j.nota, 0) / comNota.length).toFixed(1)
+      : "—";
+    document.getElementById("st-nota").textContent = media;
+    const totalH = jogos.reduce((s, j) => {
+      const h = (j.horas || "").toLowerCase();
+      const n = parseFloat(h.replace(/[^0-9.,]/g, "").replace(",", ".")) || 0;
+      return s + (h.includes("m") ? n / 60 : n);
+    }, 0);
+    document.getElementById("st-horas").textContent = Math.round(totalH) + "h";
+    document.getElementById("st-platinas").textContent = jogos.filter(j => j.platina).length;
+    document.getElementById("st-nota10").textContent = jogos.filter(j => j.nota >= 10).length;
+  }
+
+  // ── COMENTÁRIO ─────────────────────────────────────────────────
+  window.toggleComentario = function(tr, id) {
+    const next = tr.nextElementSibling;
+    if (next && next.classList.contains("comentario")) { next.remove(); return; }
+    document.querySelectorAll("tr.comentario").forEach(c => c.remove());
+    const row = document.createElement("tr");
+    row.className = "comentario";
+    const td = document.createElement("td");
+    td.colSpan = 8;
+    td.textContent = (window._reviews || {})[id] || "Sem comentário cadastrado.";
+    row.appendChild(td);
+    tr.parentNode.insertBefore(row, tr.nextSibling);
+  };
+
+  // ── ORDENAÇÃO ──────────────────────────────────────────────────
+  function linhasVisiveis() {
+    const tbody = document.getElementById("tbody");
+    return Array.from(tbody.rows).filter(r => !r.classList.contains("comentario") && r.style.display !== "none");
+  }
+
+  function reaplicarDisplay(linhas) {
+    const tbody = document.getElementById("tbody");
+    document.querySelectorAll("tr.comentario").forEach(c => c.remove());
+    linhas.forEach(r => tbody.appendChild(r));
+    aplicarFiltroAtual();
+  }
+
+  function aplicarFiltroAtual() {
+    const plat = plataformaAtiva;
+    const busca = (document.getElementById("busca").value || "").toLowerCase();
+    Array.from(document.getElementById("tbody").rows)
+      .filter(r => !r.classList.contains("comentario"))
+      .forEach(r => {
+        const platOk = plat === "todas" || (r.cells[3] && r.cells[3].textContent.includes(plat));
+        const nomeOk = !busca || (r.cells[1] && r.cells[1].textContent.toLowerCase().includes(busca));
+        r.style.display = platOk && nomeOk ? "" : "none";
+      });
+  }
+
+  window.ordenarAlfabetico = () => {
+    const rows = linhasVisiveis().sort((a, b) => a.cells[1].textContent.localeCompare(b.cells[1].textContent));
+    reaplicarDisplay(rows);
+  };
+
+  window.ordenarPorNota = () => {
+    const rows = linhasVisiveis().sort((a, b) => {
+      const nA = parseFloat(a.cells[5].textContent.replace(",", ".")) || 0;
+      const nB = parseFloat(b.cells[5].textContent.replace(",", ".")) || 0;
+      return nB - nA;
+    });
+    reaplicarDisplay(rows);
+  };
+
+  window.ordenarPlatinas = () => {
+    const rows = linhasVisiveis().sort((a, b) =>
+      (b.cells[7].textContent.includes("🏆") ? 1 : 0) - (a.cells[7].textContent.includes("🏆") ? 1 : 0)
+    );
+    reaplicarDisplay(rows);
+  };
+
+  window.ordenarHoras = (ordem) => {
+    const rows = linhasVisiveis().sort((a, b) => {
+      const ph = v => { const n = parseFloat(v.toLowerCase().replace(/[^0-9.,]/g,"").replace(",",".")); return v.toLowerCase().includes("m") ? n/60 : n || 0; };
+      const hA = ph(a.cells[4].textContent);
+      const hB = ph(b.cells[4].textContent);
+      return ordem === "maior" ? hB - hA : hA - hB;
+    });
+    reaplicarDisplay(rows);
+  };
+
+  window.ordenarData = (ordem) => {
+    const rows = linhasVisiveis().sort((a, b) => {
+      const pd = v => { const p = v.split("/"); return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date(0); };
+      const dA = pd(a.cells[6].textContent);
+      const dB = pd(b.cells[6].textContent);
+      return ordem === "recente" ? dB - dA : dA - dB;
+    });
+    reaplicarDisplay(rows);
+  };
+
+  window.filtrarPlataforma = (plat) => {
+    plataformaAtiva = plat;
+    aplicarFiltroAtual();
+  };
+
+  window.filtrarBusca = () => aplicarFiltroAtual();
+
+  // inicializa
+  carregarJogos();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Jogos</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      padding: 20px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    header h1 { font-size: 22px; color: #7c6af7; }
+    header a {
+      color: #aaa;
+      text-decoration: none;
+      font-size: 14px;
+      background: #1e1e3a;
+      padding: 7px 14px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      transition: background 0.2s;
+    }
+    header a:hover { background: #2a2a4a; }
+
+    .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+
+    /* ── STATS ── */
+    .stats-bar {
+      display: flex; gap: 14px; margin-bottom: 30px; flex-wrap: wrap;
+    }
+    .stat-card {
+      background: #13132a;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 14px 20px;
+      flex: 1; min-width: 120px;
+      text-align: center;
+    }
+    .stat-card .num { font-size: 26px; font-weight: 700; color: #7c6af7; }
+    .stat-card .lbl { font-size: 12px; color: #888; margin-top: 4px; }
+
+    /* ── FORM ── */
+    .card {
+      background: #13132a;
+      border: 1px solid #2a2a4a;
+      border-radius: 14px;
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    .card h2 { font-size: 16px; color: #7c6af7; margin-bottom: 22px; text-transform: uppercase; letter-spacing: 1px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    label { display: block; font-size: 12px; color: #888; margin-bottom: 6px; }
+    input, select, textarea {
+      width: 100%;
+      background: #0e0e22;
+      border: 1px solid #2a2a4a;
+      color: #e0e0e0;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #7c6af7;
+    }
+    select option { background: #0e0e22; }
+    textarea { resize: vertical; min-height: 90px; }
+
+    /* image upload */
+    .upload-area {
+      border: 2px dashed #2a2a4a;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .upload-area:hover { border-color: #7c6af7; background: #16163a; }
+    .upload-area input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    }
+    .upload-area img {
+      max-height: 100px; border-radius: 6px; margin-top: 8px;
+    }
+    .upload-area p { font-size: 13px; color: #777; }
+    .upload-area .upload-icon { font-size: 28px; }
+
+    /* url alternativa */
+    .url-toggle { font-size: 12px; color: #7c6af7; cursor: pointer; margin-top: 8px; display: inline-block; }
+
+    /* botões */
+    .btn-row { display: flex; gap: 12px; margin-top: 22px; }
+    .btn {
+      padding: 11px 24px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #7c6af7; color: white; }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-secondary { background: #1e1e3a; color: #aaa; border: 1px solid #333; }
+    .btn-secondary:hover { background: #2a2a4a; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* status */
+    #status {
+      margin-top: 14px; padding: 12px 16px;
+      border-radius: 8px; font-size: 14px; display: none;
+    }
+    #status.ok  { background: #0d2b1d; color: #4ade80; border: 1px solid #1a4a30; }
+    #status.err { background: #2b0d0d; color: #f87171; border: 1px solid #4a1a1a; }
+
+    /* ── LISTA ── */
+    #lista-jogos { display: flex; flex-direction: column; gap: 10px; }
+
+    .jogo-item {
+      background: #13132a;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: border-color 0.2s;
+    }
+    .jogo-item:hover { border-color: #7c6af7; }
+    .jogo-item img {
+      width: 52px; height: 52px; object-fit: cover;
+      border-radius: 6px; flex-shrink: 0;
+    }
+    .jogo-item .info { flex: 1; }
+    .jogo-item .nome { font-weight: 600; font-size: 14px; }
+    .jogo-item .meta { font-size: 12px; color: #777; margin-top: 3px; }
+    .jogo-item .nota-badge {
+      background: #1e1e3a; border: 1px solid #3a3a6a;
+      color: #7c6af7; font-weight: 700; font-size: 13px;
+      padding: 4px 10px; border-radius: 20px; flex-shrink: 0;
+    }
+    .jogo-item .acoes-item { display: flex; gap: 8px; }
+    .btn-edit, .btn-del {
+      border: none; border-radius: 6px; cursor: pointer;
+      padding: 6px 10px; font-size: 13px; transition: opacity 0.2s;
+    }
+    .btn-edit { background: #1e1e3a; color: #aaa; }
+    .btn-del  { background: #2b0d0d; color: #f87171; }
+    .btn-edit:hover { background: #2a2a4a; }
+    .btn-del:hover  { opacity: 0.8; }
+
+    /* loading */
+    .loading { text-align: center; padding: 30px; color: #555; font-size: 14px; }
+    .spinner {
+      width: 30px; height: 30px; border: 3px solid #2a2a4a;
+      border-top-color: #7c6af7; border-radius: 50%;
+      animation: spin 0.7s linear infinite; margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* search bar */
+    .search-bar {
+      display: flex; gap: 10px; margin-bottom: 16px;
+    }
+    .search-bar input { flex: 1; }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .full { grid-column: 1; }
+      .stats-bar { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎮 Painel Admin</h1>
+  <a href="todos.html">Ver site →</a>
+</header>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="num" id="st-total">—</div><div class="lbl">Jogos</div></div>
+    <div class="stat-card"><div class="num" id="st-platinas">—</div><div class="lbl">Platinas</div></div>
+    <div class="stat-card"><div class="num" id="st-media">—</div><div class="lbl">Nota Média</div></div>
+    <div class="stat-card"><div class="num" id="st-horas">—</div><div class="lbl">Horas Totais</div></div>
+  </div>
+
+  <!-- FORM -->
+  <div class="card">
+    <h2 id="form-titulo">➕ Adicionar Jogo</h2>
+    <input type="hidden" id="doc-id">
+
+    <div class="form-grid">
+      <div class="full">
+        <label>Nome do Jogo *</label>
+        <input type="text" id="f-nome" placeholder="ex: Elden Ring">
+      </div>
+
+      <div>
+        <label>Gênero</label>
+        <select id="f-genero">
+          <option value="">— Selecione —</option>
+          <option>AÇÃO</option>
+          <option>AÇÃO/ADVENTURE</option>
+          <option>ADVENTURE</option>
+          <option>AVENTURA</option>
+          <option>METROIDVANIA</option>
+          <option>MUNDO ABERTO</option>
+          <option>QUEBRA-CABEÇA</option>
+          <option>RPG</option>
+          <option>RPG/TURNO</option>
+          <option>SOULS LIKE</option>
+          <option>SURVIVAL</option>
+          <option>SURVIVAL HORROR</option>
+          <option>PESCA</option>
+          <option>OUTRO</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Plataforma</label>
+        <select id="f-plataforma">
+          <option value="">— Selecione —</option>
+          <option>PC</option>
+          <option>PS3</option>
+          <option>PS4</option>
+          <option>PS5</option>
+          <option>Xbox</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Horas de Jogo</label>
+        <input type="text" id="f-horas" placeholder="ex: 35H ou 30m">
+      </div>
+
+      <div>
+        <label>Nota (0–10)</label>
+        <input type="number" id="f-nota" min="0" max="10" step="0.5" placeholder="8.5">
+      </div>
+
+      <div>
+        <label>Data de Conclusão</label>
+        <input type="date" id="f-data">
+      </div>
+
+      <div>
+        <label>Platina?</label>
+        <select id="f-platina">
+          <option value="">Não</option>
+          <option value="🏆">Sim 🏆</option>
+        </select>
+      </div>
+
+      <!-- IMAGEM -->
+      <div class="full">
+        <label>Capa do Jogo</label>
+        <div class="upload-area" id="upload-area">
+          <input type="file" id="f-imagem" accept="image/*">
+          <div class="upload-icon">🖼️</div>
+          <p>Clique ou arraste uma imagem aqui</p>
+          <img id="preview-img" style="display:none">
+        </div>
+        <span class="url-toggle" onclick="toggleUrlInput()">↗ Usar URL de imagem</span>
+        <div id="url-input-wrap" style="display:none; margin-top:8px">
+          <input type="text" id="f-img-url" placeholder="https://...">
+        </div>
+      </div>
+
+      <div class="full">
+        <label>Comentário / Review</label>
+        <textarea id="f-review" placeholder="Escreva sua opinião sobre o jogo..."></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-salvar" onclick="salvarJogo()">💾 Salvar Jogo</button>
+      <button class="btn btn-secondary" onclick="limparForm()">✕ Cancelar</button>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+  <!-- LISTA -->
+  <div class="card">
+    <h2>📋 Jogos Cadastrados</h2>
+    <div class="search-bar">
+      <input type="text" id="busca" placeholder="🔍 Buscar jogo..." oninput="filtrarLista()">
+    </div>
+    <div id="lista-jogos">
+      <div class="loading"><div class="spinner"></div>Carregando jogos...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, orderBy, query
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAaIxroCAMOvDxg5aLUr2P8jweygemm1uM",
+    authDomain: "lista-de-jogos-f1874.firebaseapp.com",
+    projectId: "lista-de-jogos-f1874",
+    storageBucket: "lista-de-jogos-f1874.firebasestorage.app",
+    messagingSenderId: "692334284655",
+    appId: "1:692334284655:web:a55db647b5f8b39d00a29a",
+    measurementId: "G-RWLNF34VJ5"
+  };
+
+  const CLOUD_NAME = "dbovdinlw";
+  const UPLOAD_PRESET = "jogos_preset";
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let todosJogos = [];
+
+  // ── UPLOAD CLOUDINARY ──────────────────────────────────────────────
+  async function uploadImagem(file) {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", UPLOAD_PRESET);
+    const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
+    const data = await r.json();
+    if (!data.secure_url) throw new Error("Falha no upload da imagem");
+    return data.secure_url;
+  }
+
+  // ── SALVAR ────────────────────────────────────────────────────────
+  window.salvarJogo = async function() {
+    const nome = document.getElementById("f-nome").value.trim();
+    if (!nome) { mostrarStatus("O nome do jogo é obrigatório.", "err"); return; }
+
+    const btn = document.getElementById("btn-salvar");
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+
+    try {
+      let imgUrl = document.getElementById("f-img-url").value.trim();
+
+      // upload de arquivo se selecionado
+      const fileInput = document.getElementById("f-imagem");
+      if (fileInput.files[0]) {
+        mostrarStatus("Enviando imagem...", "ok");
+        imgUrl = await uploadImagem(fileInput.files[0]);
+      }
+
+      const notaRaw = document.getElementById("f-nota").value;
+      const dataRaw = document.getElementById("f-data").value;
+
+      const jogo = {
+        nome,
+        genero: document.getElementById("f-genero").value,
+        plataforma: document.getElementById("f-plataforma").value,
+        horas: document.getElementById("f-horas").value.trim(),
+        nota: notaRaw ? parseFloat(notaRaw) : null,
+        data: dataRaw ? formatarDataBR(dataRaw) : "",
+        platina: document.getElementById("f-platina").value,
+        imagem: imgUrl,
+        review: document.getElementById("f-review").value.trim(),
+        atualizadoEm: Date.now()
+      };
+
+      const docId = document.getElementById("doc-id").value;
+
+      if (docId) {
+        await updateDoc(doc(db, "jogos", docId), jogo);
+        mostrarStatus("✅ Jogo atualizado com sucesso!", "ok");
+      } else {
+        await addDoc(collection(db, "jogos"), jogo);
+        mostrarStatus("✅ Jogo adicionado com sucesso!", "ok");
+      }
+
+      limparForm();
+      await carregarJogos();
+    } catch (e) {
+      mostrarStatus("Erro: " + e.message, "err");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "💾 Salvar Jogo";
+    }
+  };
+
+  // ── CARREGAR ──────────────────────────────────────────────────────
+  async function carregarJogos() {
+    const lista = document.getElementById("lista-jogos");
+    try {
+      const q = query(collection(db, "jogos"), orderBy("atualizadoEm", "desc"));
+      const snap = await getDocs(q);
+      todosJogos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderizarLista(todosJogos);
+      atualizarStats(todosJogos);
+    } catch (e) {
+      lista.innerHTML = `<div class="loading" style="color:#f87171">Erro ao carregar: ${e.message}</div>`;
+    }
+  }
+
+  function renderizarLista(jogos) {
+    const lista = document.getElementById("lista-jogos");
+    if (!jogos.length) {
+      lista.innerHTML = `<div class="loading">Nenhum jogo encontrado.</div>`;
+      return;
+    }
+    lista.innerHTML = jogos.map(j => `
+      <div class="jogo-item">
+        <img src="${j.imagem || 'https://via.placeholder.com/52x52/1a1a3a/7c6af7?text=?'}" onerror="this.src='https://via.placeholder.com/52x52/1a1a3a/7c6af7?text=?'">
+        <div class="info">
+          <div class="nome">${j.nome}</div>
+          <div class="meta">${j.plataforma || ''} · ${j.genero || ''} · ${j.horas || '?'} · ${j.data || ''} ${j.platina ? '🏆' : ''}</div>
+        </div>
+        <div class="nota-badge">${j.nota !== null && j.nota !== undefined ? j.nota : '—'}</div>
+        <div class="acoes-item">
+          <button class="btn-edit" onclick="editarJogo('${j.id}')">✏️</button>
+          <button class="btn-del" onclick="deletarJogo('${j.id}', '${j.nome.replace(/'/g,"\\'")}')">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.filtrarLista = function() {
+    const q = document.getElementById("busca").value.toLowerCase();
+    const filtrados = todosJogos.filter(j => j.nome.toLowerCase().includes(q));
+    renderizarLista(filtrados);
+  };
+
+  function atualizarStats(jogos) {
+    document.getElementById("st-total").textContent = jogos.length;
+    document.getElementById("st-platinas").textContent = jogos.filter(j => j.platina).length;
+    const notas = jogos.filter(j => j.nota !== null && j.nota !== undefined);
+    const media = notas.length ? (notas.reduce((s, j) => s + j.nota, 0) / notas.length).toFixed(1) : "—";
+    document.getElementById("st-media").textContent = media;
+    const totalH = jogos.reduce((s, j) => {
+      const h = j.horas || "";
+      const n = parseFloat(h.replace(/[^0-9.,]/g, "").replace(",", ".")) || 0;
+      return s + (h.toLowerCase().includes("m") ? n / 60 : n);
+    }, 0);
+    document.getElementById("st-horas").textContent = Math.round(totalH) + "h";
+  }
+
+  // ── EDITAR ────────────────────────────────────────────────────────
+  window.editarJogo = function(id) {
+    const j = todosJogos.find(x => x.id === id);
+    if (!j) return;
+    document.getElementById("doc-id").value = id;
+    document.getElementById("f-nome").value = j.nome || "";
+    document.getElementById("f-genero").value = j.genero || "";
+    document.getElementById("f-plataforma").value = j.plataforma || "";
+    document.getElementById("f-horas").value = j.horas || "";
+    document.getElementById("f-nota").value = j.nota ?? "";
+    document.getElementById("f-data").value = dataParaInput(j.data || "");
+    document.getElementById("f-platina").value = j.platina || "";
+    document.getElementById("f-img-url").value = j.imagem || "";
+    document.getElementById("url-input-wrap").style.display = "block";
+    document.getElementById("f-review").value = j.review || "";
+    document.getElementById("form-titulo").textContent = "✏️ Editar Jogo";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // ── DELETAR ───────────────────────────────────────────────────────
+  window.deletarJogo = async function(id, nome) {
+    if (!confirm(`Deletar "${nome}"?`)) return;
+    try {
+      await deleteDoc(doc(db, "jogos", id));
+      await carregarJogos();
+      mostrarStatus(`🗑️ "${nome}" removido.`, "ok");
+    } catch (e) {
+      mostrarStatus("Erro ao deletar: " + e.message, "err");
+    }
+  };
+
+  // ── HELPERS ───────────────────────────────────────────────────────
+  function formatarDataBR(iso) {
+    const [y, m, d] = iso.split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  function dataParaInput(br) {
+    const p = br.split("/");
+    if (p.length !== 3) return "";
+    return `${p[2]}-${p[1].padStart(2,"0")}-${p[0].padStart(2,"0")}`;
+  }
+
+  function mostrarStatus(msg, tipo) {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = tipo;
+    el.style.display = "block";
+    if (tipo === "ok") setTimeout(() => el.style.display = "none", 3500);
+  }
+
+  window.limparForm = function() {
+    document.getElementById("doc-id").value = "";
+    ["f-nome","f-genero","f-plataforma","f-horas","f-nota","f-data","f-platina","f-img-url","f-review"].forEach(id => {
+      const el = document.getElementById(id);
+      el.value = id === "f-platina" ? "" : "";
+    });
+    document.getElementById("f-imagem").value = "";
+    document.getElementById("preview-img").style.display = "none";
+    document.getElementById("form-titulo").textContent = "➕ Adicionar Jogo";
+    document.getElementById("status").style.display = "none";
+  };
+
+  window.toggleUrlInput = function() {
+    const w = document.getElementById("url-input-wrap");
+    w.style.display = w.style.display === "none" ? "block" : "none";
+  };
+
+  // preview da imagem selecionada
+  document.getElementById("f-imagem").addEventListener("change", function() {
+    const f = this.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.getElementById("preview-img");
+      img.src = e.target.result;
+      img.style.display = "block";
+      document.querySelector(".upload-area p").style.display = "none";
+    };
+    reader.readAsDataURL(f);
+  });
+
+  // inicializa
+  carregarJogos();
+</script>
+
+</body>
+</html>
