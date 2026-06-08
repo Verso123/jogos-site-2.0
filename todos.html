@@ -148,7 +148,7 @@
           <option>AVENTURA</option><option>METROIDVANIA</option><option>MUNDO ABERTO</option>
           <option>QUEBRA-CABEÇA</option><option>RPG</option><option>RPG/TURNO</option>
           <option>SOULS LIKE</option><option>SURVIVAL</option><option>SURVIVAL HORROR</option>
-          <option>PESCA</option><option>OUTRO</option>
+          <option>PESCA</option><option>PLATAFORMA</option><option>OUTRO</option>
         </select>
       </div>
       <div>
@@ -330,7 +330,8 @@
       return;
     }
     tbody.innerHTML = jogos.map(j => {
-      const nota = j.nota !== null && j.nota !== undefined ? j.nota : null;
+      const notaRaw = j.nota !== null && j.nota !== undefined ? j.nota : null;
+      const nota = notaRaw !== null ? (parseFloat(String(notaRaw).replace(",", ".")) || 0) : null;
       const classe = nota >= 10 ? "jogo-row nota10" : "jogo-row";
       const badge = badgePlataforma(j.plataforma || "");
       const imgSrc = j.imagem || "https://via.placeholder.com/54x54/1a1a2e/7c6af7?text=?";
@@ -356,8 +357,10 @@
   }
 
   function renderEstrelas(nota) {
-    const c = Math.floor(nota/2), m = (nota%2)>=1?1:0, v = 5-c-m;
-    return "★".repeat(c)+(m?"½":"")+"☆".repeat(v);
+    // Garante que nota é número, trata string com vírgula, e limita entre 0 e 10
+    const n = Math.min(10, Math.max(0, parseFloat(String(nota).replace(",", ".")) || 0));
+    const c = Math.floor(n/2), m = (n%2)>=1?1:0, v = 5-c-m;
+    return "★".repeat(c)+(m?"½":"")+"☆".repeat(Math.max(0, v));
   }
 
   function badgePlataforma(p) {
@@ -372,7 +375,7 @@
     document.getElementById("st-total").textContent = jogos.length;
     const comNota = jogos.filter(j => j.nota !== null && j.nota !== undefined);
     document.getElementById("st-nota").textContent = comNota.length
-      ? (comNota.reduce((s,j)=>s+j.nota,0)/comNota.length).toFixed(1) : "—";
+      ? (comNota.reduce((s,j)=>s+(parseFloat(String(j.nota).replace(",","."))||0),0)/comNota.length).toFixed(1) : "—";
     const totalH = jogos.reduce((s,j)=>{
       const h=(j.horas||"").toLowerCase(), n=parseFloat(h.replace(/[^0-9.,]/g,"").replace(",","."))||0;
       return s+(h.includes("m")?n/60:n);
